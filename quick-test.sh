@@ -19,7 +19,8 @@ NSPAWN="sudo systemd-nspawn -q -D siorra/chroot"
 echo "== copy includes.chroot + hooks into chroot"
 sudo rsync -a siorra/config/includes.chroot/ siorra/chroot/
 sudo mkdir -p siorra/chroot/tmp/hooks
-sudo cp siorra/config/hooks/normal/*.hook.chroot siorra/chroot/tmp/hooks/
+# only our own hooks (regular files); live-build's stock ones are symlinks that dangle on the host
+find siorra/config/hooks/normal -maxdepth 1 -type f -name '*.hook.chroot' -exec sudo cp {} siorra/chroot/tmp/hooks/ \;
 
 echo "== ensure user-setup is installed (old chroot predates the fix)"
 $NSPAWN --setenv=http_proxy="$PROXY" --setenv=https_proxy="$PROXY" bash -c \
