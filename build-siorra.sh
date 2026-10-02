@@ -17,7 +17,8 @@ apt-get install -y live-build debootstrap squashfs-tools xorriso \
 
 mkdir -p siorra && cd siorra
 # keep cache/ so reruns don't redownload everything (plain `lb clean`, not --purge)
-lb clean 2>/dev/null || true
+# (CONFIG_ONLY=1 skips it so an existing chroot survives; see quick-test.sh)
+[ "${CONFIG_ONLY:-}" = 1 ] || lb clean 2>/dev/null || true
 
 lb config \
     --distribution trixie \
@@ -195,6 +196,7 @@ chmod +x config/includes.chroot/usr/lib/live/config/0031-siorra-live
 bash ../apply-branding.sh
 
 # ---------- Build ----------
+if [ "${CONFIG_ONLY:-}" = 1 ]; then echo "Config generated (CONFIG_ONLY=1), not building."; exit 0; fi
 lb build 2>&1 | tee build.log
 
 ls -lh ./*.iso
