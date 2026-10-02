@@ -96,6 +96,9 @@ HOME_URL="https://example.com/siorra"
 SUPPORT_URL="https://example.com/siorra/support"
 BUG_REPORT_URL="https://example.com/siorra/bugs"
 OSR
+# live-build's bootstrap leaves /etc/os-release as a plain Debian copy (with IMAGE_ID/BUILD_ID); restore the symlink
+rm -f /etc/os-release
+ln -s ../usr/lib/os-release /etc/os-release
 # quoted heredocs: dash's echo would turn the \n of agetty's issue escapes into a newline
 cat > /etc/issue <<'ISS'
 Siorra Linux ${VERSION} \n \l

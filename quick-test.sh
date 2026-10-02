@@ -54,6 +54,7 @@ PY
 echo "== branding"
 $NSPAWN bash -c '
   cat /etc/os-release; cat /etc/issue; cat /etc/motd
-  echo "--- remaining Debian mentions in launchers/vendor:"
-  grep -il debian /usr/share/applications/calamares-install-debian.desktop /usr/share/xfce4/vendorinfo /usr/share/xfce4/helpers/*.desktop || echo none
-  ls /etc/calamares/branding; readlink /etc/dpkg/origins/default'
+  echo "--- user-visible Debian in launchers (binary names like Exec=...debian are expected):"
+  grep -iE "^(Name|GenericName|Comment)(\[.*\])?=.*debian" /usr/share/applications/calamares-install-debian.desktop /usr/share/xfce4/helpers/*.desktop || echo none
+  echo "--- vendorinfo:"; cat /usr/share/xfce4/vendorinfo
+  ls /etc/calamares/branding; readlink /etc/dpkg/origins/default /etc/os-release'
