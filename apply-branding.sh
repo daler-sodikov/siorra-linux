@@ -24,6 +24,7 @@ cat > $C/etc/lightdm/lightdm-gtk-greeter.conf.d/50-siorra.conf <<'EOF'
 [greeter]
 background=/usr/share/backgrounds/siorra/siorra-wallpaper.png
 default-user-image=/usr/share/pixmaps/siorra-logo.png
+position=50%,center 60%,center
 EOF
 
 # XFCE default wallpaper (common monitor names; verify on first boot)

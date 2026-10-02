@@ -15,7 +15,8 @@ apt-get install -y live-build debootstrap squashfs-tools xorriso \
     isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools
 
 mkdir -p siorra && cd siorra
-lb clean --purge 2>/dev/null || true
+# keep cache/ so reruns don't redownload everything (plain `lb clean`, not --purge)
+lb clean 2>/dev/null || true
 
 lb config \
     --distribution trixie \
@@ -30,7 +31,8 @@ lb config \
     --iso-publisher "Bitsoft" \
     --image-name "siorra-linux" \
     --security true --updates true \
-    --apt-recommends false
+    --apt-recommends false \
+    ${http_proxy:+--apt-http-proxy "$http_proxy"}
 
 # ---------- Packages ----------
 mkdir -p config/package-lists
@@ -45,6 +47,10 @@ firmware-misc-nonfree
 live-boot
 live-config
 live-config-systemd
+user-setup
+locales
+keyboard-configuration
+iproute2
 # desktop
 xfce4
 xfce4-goodies
@@ -91,13 +97,77 @@ echo "siorra" > /etc/hostname
 EOF
 chmod +x config/hooks/normal/0100-siorra-branding.hook.chroot
 
-# ---------- Live user: siorra / siorra (change it!) ----------
+# ---------- Live user: siorra / siorra ----------
+# user-setup (a mere Recommends of live-config) MUST be installed or live-config
+# never creates the user; it is in the package list above.
 mkdir -p config/includes.chroot/etc/live/config.conf.d
 cat > config/includes.chroot/etc/live/config.conf.d/siorra.conf <<'EOF'
 LIVE_USERNAME="siorra"
 LIVE_USER_FULLNAME="Siorra Live User"
 LIVE_USER_DEFAULT_GROUPS="audio cdrom dip floppy video plugdev netdev sudo"
 EOF
+
+# Custom live-config component, runs at boot right after 0030-user-setup:
+# sets the live password and enables LightDM autologin (live session only, so
+# the installed system is not affected). Debian's stock lightdm.conf has no
+# "#autologin-user=" lines, so live-config's own lightdm component does nothing.
+mkdir -p config/includes.chroot/usr/lib/live/config
+cat > config/includes.chroot/usr/lib/live/config/0031-siorra-live <<'EOF'
+#!/bin/sh
+
+. /usr/lib/live/config.sh
+
+Cmdline ()
+{
+	for _PARAMETER in ${LIVE_CONFIG_CMDLINE}
+	do
+		case "${_PARAMETER}" in
+			live-config.noautologin|noautologin|live-config.nox11autologin|nox11autologin)
+				LIVE_CONFIG_NOAUTOLOGIN="true"
+				;;
+			live-config.username=*|username=*)
+				LIVE_USERNAME="${_PARAMETER#*username=}"
+				;;
+		esac
+	done
+}
+
+Init ()
+{
+	if component_was_executed "siorra-live"
+	then
+		exit 0
+	fi
+
+	echo -n " siorra-live"
+}
+
+Config ()
+{
+	if grep -q "^${LIVE_USERNAME}:" /etc/passwd
+	then
+		echo "${LIVE_USERNAME}:siorra" | chpasswd
+	fi
+
+	if [ "${LIVE_CONFIG_NOAUTOLOGIN}" != "true" ] && [ -d /etc/lightdm ]
+	then
+		mkdir -p /etc/lightdm/lightdm.conf.d
+		cat > /etc/lightdm/lightdm.conf.d/50-siorra-autologin.conf << EOT
+[Seat:*]
+autologin-user=${LIVE_USERNAME}
+autologin-user-timeout=0
+autologin-session=xfce
+EOT
+	fi
+
+	touch /var/lib/live/config/siorra-live
+}
+
+Cmdline
+Init
+Config
+EOF
+chmod +x config/includes.chroot/usr/lib/live/config/0031-siorra-live
 
 # ---------- Branding ----------
 bash ../apply-branding.sh
