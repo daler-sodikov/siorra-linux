@@ -41,6 +41,11 @@ The ISO appears in `siorra/`. The exact filename has not been confirmed, so chec
 5. **Password comment** corrected.
 - Open: Calamares has no `removeuser` module, so the installed system keeps the `siorra` user.
 
+## Debian de-branding (in source, unverified until rebuilt)
+- os-release `PRETTY_NAME="Siorra Linux 0.1 (Aurora), based on Debian GNU/Linux 13"` (+ `ID_LIKE=debian`), `/etc/issue`, `/etc/issue.net`, `/etc/motd` all say Siorra / based on Debian. `BASED_ON` var in `build-siorra.sh`. The old `/etc/issue` was broken (dash `echo` expanded `\n`); now written with a quoted heredoc.
+- Hook `0300-siorra-debrand` (in `apply-branding.sh`): Calamares launcher ("Install Siorra Linux"), removes `calamares/branding/debian`, renames Xfce "Debian Sensible Browser/X Terminal Emulator", Xfce vendorinfo, `debian-logo.png`, dpkg vendor `siorra` (Parent: Debian). Also `GRUB_DISTRIBUTOR=Siorra` for installed systems and Siorra titles in syslinux/GRUB themes.
+- Intentionally still Debian: apt sources, `/etc/debian_version`, package names, kernel version string (`6.12.x+deb13`), `Exec=calamares-install-debian`, GRUB live entry names ("Live system (amd64)") which live-build generates.
+
 ## Not yet verified
 - Plymouth boot splash.
 - GRUB/syslinux splash images: live-build bootloader template paths may differ, and the script replaces every `splash.png` it finds.

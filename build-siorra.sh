@@ -9,6 +9,7 @@ set -euo pipefail
 
 VERSION="0.1"
 CODENAME="Aurora"
+BASED_ON="Debian GNU/Linux 13"   # shown in system information
 
 apt-get update
 apt-get install -y live-build debootstrap squashfs-tools xorriso \
@@ -29,6 +30,7 @@ lb config \
     --iso-application "Siorra Linux" \
     --iso-volume "SIORRA_${VERSION}" \
     --iso-publisher "Bitsoft" \
+    --iso-preparer "Siorra Linux" \
     --image-name "siorra-linux" \
     --security true --updates true \
     --apt-recommends false \
@@ -80,19 +82,39 @@ cat > config/hooks/normal/0100-siorra-branding.hook.chroot <<EOF
 #!/bin/sh
 set -e
 cat > /usr/lib/os-release <<'OSR'
-PRETTY_NAME="Siorra Linux ${VERSION} (${CODENAME})"
+PRETTY_NAME="Siorra Linux ${VERSION} (${CODENAME}), based on ${BASED_ON}"
 NAME="Siorra Linux"
 VERSION_ID="${VERSION}"
 VERSION="${VERSION} (${CODENAME})"
 VERSION_CODENAME=${CODENAME,,}
 ID=siorra
 ID_LIKE=debian
+ANSI_COLOR="38;2;216;90;48"
+LOGO=siorra-logo
 HOME_URL="https://example.com/siorra"
 SUPPORT_URL="https://example.com/siorra/support"
 BUG_REPORT_URL="https://example.com/siorra/bugs"
 OSR
-echo "Siorra Linux ${VERSION} \n \l" > /etc/issue
-echo "Siorra Linux ${VERSION}" > /etc/issue.net
+# quoted heredocs: dash's echo would turn the \n of agetty's issue escapes into a newline
+cat > /etc/issue <<'ISS'
+Siorra Linux ${VERSION} \n \l
+Based on ${BASED_ON}
+
+ISS
+cat > /etc/issue.net <<'ISS'
+Siorra Linux ${VERSION} (based on ${BASED_ON})
+ISS
+cat > /etc/motd <<'MOTD'
+
+Siorra Linux ${VERSION}, based on ${BASED_ON}.
+
+The programs included with the Siorra Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Siorra Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+MOTD
 echo "siorra" > /etc/hostname
 EOF
 chmod +x config/hooks/normal/0100-siorra-branding.hook.chroot
